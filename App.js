@@ -13,14 +13,69 @@ import Task from "./components/Task";
 import AddTask from "./components/AddTask";
 import DeleteTask from "./components/DeleteTask";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 export default function App() {
+  // const server = require("./server");
+
+  const fetchTasks = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/tasks");
+      setItems(response.data);
+    } catch (error) {
+      console.error("Error fetching data: ", error);
+    }
+  };
+
+  const handleAddTask = async (task) => {
+    try {
+      const response = await axios.post("http://localhost:5000/api/tasks", {
+        title: task,
+      });
+      setItems((prevItems) => [...prevItems, response.data]);
+      console.log("Task added to server: " + response.data);
+    } catch (error) {
+      console.error("Error adding task to server: ", error);
+    }
+
+    //const updatedTasks = [...items, { text: task, isCompleted: false }];
+    //setItems(updatedTasks);
+    //saveTasks(updatedTasks);
+  };
+
+  const handleTaskUpdate = async (index) => {
+    const updatedTasks = [...items];
+    updatedTasks[index].isCompleted = !updatedTasks[index].isCompleted;
+    setItems(updatedTasks);
+    try {
+      await axios.put(
+        `http://localhost:5000/api/tasks/${updatedTasks[index]._id}`,
+        { isCompleted: updatedTasks[index].isCompleted }
+      );
+    } catch (error) {
+      console.error("Error updating task on server: ", error);
+    }
+  };
+
+  const handleTaskDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/tasks/${id}`);
+      setItems((prevItems) => prevItems.filter((item) => item._id !== id));
+    } catch (error) {
+      console.error("Error deleting task from server: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
   const [items, setItems] = useState([]);
-  const handleAddTask = (task) => {
+  /*const handleAddTask = (task) => {
     const updatedTasks = [...items, { text: task, isCompleted: false }];
     setItems(updatedTasks);
     saveTasks(updatedTasks);
-  };
+  };*/
 
   const saveTasks = async (tasks) => {
     try {
@@ -31,7 +86,7 @@ export default function App() {
     }
   };
 
-  useEffect(() => {
+  /*useEffect(() => {
     const loadTasks = async () => {
       try {
         const value = await AsyncStorage.getItem("my-key");
@@ -45,7 +100,7 @@ export default function App() {
     };
 
     loadTasks();
-  }, []);
+  }, []);*/
 
   const [deleteMode, setDeleteMode] = useState(false);
 
